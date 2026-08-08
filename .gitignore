@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
+# Java / Maven
+**/target/
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+*.log
