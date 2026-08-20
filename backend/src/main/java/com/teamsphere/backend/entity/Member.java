@@ -20,6 +20,12 @@ public class Member {
     @Column(length = 30)
     private String phone;
 
+    @Column(nullable = false, unique = true, length = 150)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
     @Column(length = 100)
     private String position;
 
@@ -113,5 +119,21 @@ public class Member {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
