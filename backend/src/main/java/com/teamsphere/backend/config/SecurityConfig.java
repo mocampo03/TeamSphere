@@ -15,6 +15,8 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
+                .httpBasic(httpBasic -> {
+                })
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/organizations/**").permitAll()
                         .requestMatchers("/api/members/**").permitAll()
