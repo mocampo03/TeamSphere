@@ -117,4 +117,15 @@ public class MemberController {
                 member.getActive(),
                 member.getOrganization().getId());
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMember(@PathVariable Long id) {
+
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Miembro no encontrado"));
+
+        memberRepository.delete(member);
+
+        return ResponseEntity.noContent().build();
+    }
 }
