@@ -11,37 +11,37 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationException(
-            MethodArgumentNotValidException exception) {
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<Map<String, Object>> handleValidationException(
+                        MethodArgumentNotValidException exception) {
 
-        Map<String, String> errors = new LinkedHashMap<>();
+                Map<String, String> errors = new LinkedHashMap<>();
 
-        exception.getBindingResult()
-                .getFieldErrors()
-                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+                exception.getBindingResult()
+                                .getFieldErrors()
+                                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("message", "Validation failed");
-        response.put("errors", errors);
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("status", HttpStatus.BAD_REQUEST.value());
+                response.put("message", "Validation failed");
+                response.put("errors", errors);
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
-    }
+                return ResponseEntity
+                                .status(HttpStatus.BAD_REQUEST)
+                                .body(response);
+        }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(
-            ResourceNotFoundException exception) {
+        @ExceptionHandler(ResourceNotFoundException.class)
+        public ResponseEntity<Map<String, Object>> handleResourceNotFound(
+                        ResourceNotFoundException exception) {
 
-        Map<String, Object> response = new LinkedHashMap<>();
+                Map<String, Object> response = new LinkedHashMap<>();
 
-        response.put("status", HttpStatus.NOT_FOUND.value());
-        response.put("message", exception.getMessage());
+                response.put("status", HttpStatus.NOT_FOUND.value());
+                response.put("message", exception.getMessage());
 
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(response);
-    }
+                return ResponseEntity
+                                .status(HttpStatus.NOT_FOUND)
+                                .body(response);
+        }
 }
