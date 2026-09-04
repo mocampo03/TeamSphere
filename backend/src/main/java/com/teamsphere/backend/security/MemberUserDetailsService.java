@@ -23,11 +23,16 @@ public class MemberUserDetailsService implements UserDetailsService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Member not found: " + email));
 
-        return User.builder()
+        UserDetails userDetails = User.builder()
                 .username(member.getEmail())
                 .password(member.getPassword())
-                .roles("USER")
+                .roles(member.getRole())
                 .disabled(!member.getActive())
                 .build();
+
+        System.out.println("MEMBER ROLE: " + member.getRole());
+        System.out.println("AUTHORITIES: " + userDetails.getAuthorities());
+
+        return userDetails;
     }
 }

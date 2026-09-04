@@ -32,6 +32,9 @@ public class Member {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Column(nullable = false, length = 20)
+    private String role = "USER";
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
@@ -136,4 +139,13 @@ public class Member {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
 }

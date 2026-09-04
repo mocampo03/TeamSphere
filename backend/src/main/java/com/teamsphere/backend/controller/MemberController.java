@@ -8,9 +8,11 @@ import com.teamsphere.backend.exception.ResourceNotFoundException;
 import com.teamsphere.backend.repository.MemberRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+
 import java.util.List;
 
 @RestController
@@ -48,8 +50,10 @@ public class MemberController {
         return ResponseEntity.ok(toResponse(member));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<MemberResponse> createMember(@Valid @RequestBody MemberRequest request) {
+    public ResponseEntity<MemberResponse> createMember(
+            @Valid @RequestBody MemberRequest request) {
 
         Member member = new Member();
 
@@ -74,6 +78,7 @@ public class MemberController {
                 .body(toResponse(savedMember));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<MemberResponse> updateMember(
             @PathVariable Long id,
@@ -105,6 +110,18 @@ public class MemberController {
         return ResponseEntity.ok(toResponse(updatedMember));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMember(@PathVariable Long id) {
+
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Miembro no encontrado"));
+
+        memberRepository.delete(member);
+
+        return ResponseEntity.noContent().build();
+    }
+
     private MemberResponse toResponse(Member member) {
 
         return new MemberResponse(
@@ -116,16 +133,5 @@ public class MemberController {
                 member.getPosition(),
                 member.getActive(),
                 member.getOrganization().getId());
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMember(@PathVariable Long id) {
-
-        Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Miembro no encontrado"));
-
-        memberRepository.delete(member);
-
-        return ResponseEntity.noContent().build();
     }
 }
