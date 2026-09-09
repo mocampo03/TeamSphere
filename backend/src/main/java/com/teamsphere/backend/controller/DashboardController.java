@@ -3,6 +3,7 @@ package com.teamsphere.backend.controller;
 import com.teamsphere.backend.dto.DashboardResponse;
 import com.teamsphere.backend.repository.EventRepository;
 import com.teamsphere.backend.repository.MemberRepository;
+import com.teamsphere.backend.repository.ReportRepository;
 import com.teamsphere.backend.repository.TaskRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,15 +17,18 @@ public class DashboardController {
     private final MemberRepository memberRepository;
     private final TaskRepository taskRepository;
     private final EventRepository eventRepository;
+    private final ReportRepository reportRepository;
 
     public DashboardController(
             MemberRepository memberRepository,
             TaskRepository taskRepository,
-            EventRepository eventRepository) {
+            EventRepository eventRepository,
+            ReportRepository reportRepository) {
 
         this.memberRepository = memberRepository;
         this.taskRepository = taskRepository;
         this.eventRepository = eventRepository;
+        this.reportRepository = reportRepository;
     }
 
     @GetMapping
@@ -51,13 +55,16 @@ public class DashboardController {
 
         long totalEvents = eventRepository.count();
 
+        long totalReports = reportRepository.count();
+
         DashboardResponse dashboard = new DashboardResponse(
                 totalMembers,
                 totalTasks,
                 todoTasks,
                 inProgressTasks,
                 completedTasks,
-                totalEvents);
+                totalEvents,
+                totalReports);
 
         return ResponseEntity.ok(dashboard);
     }

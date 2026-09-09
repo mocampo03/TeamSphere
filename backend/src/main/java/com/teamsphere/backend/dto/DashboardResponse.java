@@ -8,6 +8,7 @@ public class DashboardResponse {
     private Long inProgressTasks;
     private Long completedTasks;
     private Long totalEvents;
+    private Long totalReports;
 
     public DashboardResponse(
             Long totalMembers,
@@ -15,7 +16,8 @@ public class DashboardResponse {
             Long todoTasks,
             Long inProgressTasks,
             Long completedTasks,
-            Long totalEvents) {
+            Long totalEvents,
+            Long totalReports) {
 
         this.totalMembers = totalMembers;
         this.totalTasks = totalTasks;
@@ -23,6 +25,7 @@ public class DashboardResponse {
         this.inProgressTasks = inProgressTasks;
         this.completedTasks = completedTasks;
         this.totalEvents = totalEvents;
+        this.totalReports = totalReports;
     }
 
     public Long getTotalMembers() {
@@ -47,5 +50,9 @@ public class DashboardResponse {
 
     public Long getTotalEvents() {
         return totalEvents;
+    }
+
+    public Long getTotalReports() {
+        return totalReports;
     }
 }
