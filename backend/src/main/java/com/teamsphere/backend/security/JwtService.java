@@ -1,5 +1,6 @@
 package com.teamsphere.backend.security;
 
+import com.teamsphere.backend.entity.Member;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,50 +13,65 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "TeamSphereSecretKeyForJWTAuthentication2026Secure";
+        private static final String SECRET_KEY = "TeamSphereSecretKeyForJWTAuthentication2026Secure";
 
-    private static final long EXPIRATION_TIME = 1000L * 60 * 60 * 24;
+        private static final long EXPIRATION_TIME = 1000L * 60 * 60 * 24;
 
-    private final SecretKey key = Keys.hmacShaKeyFor(
-            SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        private final SecretKey key = Keys.hmacShaKeyFor(
+                        SECRET_KEY.getBytes(StandardCharsets.UTF_8));
 
-    public String generateToken(UserDetails userDetails) {
+        public String generateToken(UserDetails userDetails, Member member) {
 
-        return Jwts.builder()
-                .subject(userDetails.getUsername())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(key)
-                .compact();
-    }
+                String role = userDetails.getAuthorities()
+                                .stream()
+                                .findFirst()
+                                .map(authority -> authority.getAuthority())
+                                .orElse("ROLE_USER");
 
-    public String extractUsername(String token) {
+                String fullName = (member.getFirstName() + " " + member.getLastName()).trim();
 
-        return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
-    }
+                return Jwts.builder()
+                                .subject(userDetails.getUsername())
+                                .claim("email", member.getEmail())
+                                .claim("name", fullName)
+                                .claim("role", role)
+                                .claim("organizationId", member.getOrganization().getId())
+                                .issuedAt(new Date())
+                                .expiration(new Date(
+                                                System.currentTimeMillis() + EXPIRATION_TIME))
+                                .signWith(key)
+                                .compact();
+        }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
+        public String extractUsername(String token) {
 
-        String username = extractUsername(token);
+                return Jwts.parser()
+                                .verifyWith(key)
+                                .build()
+                                .parseSignedClaims(token)
+                                .getPayload()
+                                .getSubject();
+        }
 
-        return username.equals(userDetails.getUsername())
-                && !isTokenExpired(token);
-    }
+        public boolean isTokenValid(
+                        String token,
+                        UserDetails userDetails) {
 
-    private boolean isTokenExpired(String token) {
+                String username = extractUsername(token);
 
-        Date expiration = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getExpiration();
+                return username.equals(userDetails.getUsername())
+                                && !isTokenExpired(token);
+        }
 
-        return expiration.before(new Date());
-    }
+        private boolean isTokenExpired(String token) {
+
+                Date expiration = Jwts.parser()
+                                .verifyWith(key)
+                                .build()
+                                .parseSignedClaims(token)
+                                .getPayload()
+                                .getExpiration();
+
+                return expiration.before(new Date());
+        }
 }

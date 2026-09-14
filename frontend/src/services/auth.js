@@ -1,9 +1,7 @@
 export function getCurrentUser() {
   const token = localStorage.getItem("token");
 
-  if (!token) {
-    return null;
-  }
+  if (!token) return null;
 
   try {
     const payload = token.split(".")[1];
@@ -36,6 +34,9 @@ export function getCurrentUser() {
       name,
       role,
       email: decodedPayload.email || decodedPayload.sub,
+      organizationId: decodedPayload.organizationId
+        ? Number(decodedPayload.organizationId)
+        : null,
     };
   } catch (error) {
     console.error("Error reading authentication token:", error);
