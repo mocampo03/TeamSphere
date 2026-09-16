@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import api from "../services/api";
+import { getCurrentUser } from "../services/auth";
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -19,6 +20,16 @@ function DashboardPage() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const currentUser = getCurrentUser();
+
+  const organizationNames = {
+    1: "Teamsphere",
+    4: "OrgPrueba",
+  };
+
+  const organizationName =
+    organizationNames[currentUser?.organizationId] || "TeamSphere";
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -90,7 +101,9 @@ function DashboardPage() {
             TEAM OVERVIEW
           </div>
 
-          <h1>Welcome to TeamSphere 👋</h1>
+          <h1>
+            {organizationName} welcomes you back, {currentUser?.name || "User"}!
+          </h1>
 
           <p>Here is what is happening across your workspace today.</p>
         </div>
@@ -98,6 +111,7 @@ function DashboardPage() {
         <button
           className="dashboard-action"
           onClick={() => navigate("/members")}
+          type="button"
         >
           View workspace
           <ArrowUpRight size={18} />
@@ -105,7 +119,11 @@ function DashboardPage() {
       </section>
 
       <section className="stats-grid">
-        <article className="stat-card">
+        <button
+          className="stat-card"
+          onClick={() => navigate("/members")}
+          type="button"
+        >
           <div className="stat-icon members-icon">
             <Users size={22} />
           </div>
@@ -115,9 +133,13 @@ function DashboardPage() {
             <strong>{dashboardData.totalMembers}</strong>
             <small>Your active team</small>
           </div>
-        </article>
+        </button>
 
-        <article className="stat-card">
+        <button
+          className="stat-card"
+          onClick={() => navigate("/tasks")}
+          type="button"
+        >
           <div className="stat-icon tasks-icon">
             <ListTodo size={22} />
           </div>
@@ -127,9 +149,13 @@ function DashboardPage() {
             <strong>{dashboardData.totalTasks}</strong>
             <small>Across your workspace</small>
           </div>
-        </article>
+        </button>
 
-        <article className="stat-card">
+        <button
+          className="stat-card"
+          onClick={() => navigate("/events")}
+          type="button"
+        >
           <div className="stat-icon events-icon">
             <CalendarDays size={22} />
           </div>
@@ -139,9 +165,13 @@ function DashboardPage() {
             <strong>{dashboardData.totalEvents}</strong>
             <small>Scheduled activities</small>
           </div>
-        </article>
+        </button>
 
-        <article className="stat-card">
+        <button
+          className="stat-card"
+          onClick={() => navigate("/tasks")}
+          type="button"
+        >
           <div className="stat-icon completed-icon">
             <CheckCircle2 size={22} />
           </div>
@@ -151,7 +181,7 @@ function DashboardPage() {
             <strong>{completionPercentage}%</strong>
             <small>Tasks completed</small>
           </div>
-        </article>
+        </button>
       </section>
 
       <section className="dashboard-content-grid">

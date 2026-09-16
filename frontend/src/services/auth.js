@@ -40,7 +40,6 @@ export function getCurrentUser() {
     };
   } catch (error) {
     console.error("Error reading authentication token:", error);
-
     return null;
   }
 }

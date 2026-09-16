@@ -1,71 +1,100 @@
 package com.teamsphere.backend.controller;
 
 import com.teamsphere.backend.dto.DashboardResponse;
+import com.teamsphere.backend.entity.Event;
+import com.teamsphere.backend.entity.Member;
+import com.teamsphere.backend.entity.Report;
+import com.teamsphere.backend.entity.Task;
 import com.teamsphere.backend.repository.EventRepository;
 import com.teamsphere.backend.repository.MemberRepository;
 import com.teamsphere.backend.repository.ReportRepository;
 import com.teamsphere.backend.repository.TaskRepository;
+
+import com.teamsphere.backend.exception.ResourceNotFoundException;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController {
 
-    private final MemberRepository memberRepository;
-    private final TaskRepository taskRepository;
-    private final EventRepository eventRepository;
-    private final ReportRepository reportRepository;
+        private final MemberRepository memberRepository;
+        private final TaskRepository taskRepository;
+        private final EventRepository eventRepository;
+        private final ReportRepository reportRepository;
 
-    public DashboardController(
-            MemberRepository memberRepository,
-            TaskRepository taskRepository,
-            EventRepository eventRepository,
-            ReportRepository reportRepository) {
+        public DashboardController(
+                        MemberRepository memberRepository,
+                        TaskRepository taskRepository,
+                        EventRepository eventRepository,
+                        ReportRepository reportRepository) {
 
-        this.memberRepository = memberRepository;
-        this.taskRepository = taskRepository;
-        this.eventRepository = eventRepository;
-        this.reportRepository = reportRepository;
-    }
+                this.memberRepository = memberRepository;
+                this.taskRepository = taskRepository;
+                this.eventRepository = eventRepository;
+                this.reportRepository = reportRepository;
+        }
 
-    @GetMapping
-    public ResponseEntity<DashboardResponse> getDashboard() {
+        @GetMapping
+        public ResponseEntity<DashboardResponse> getDashboard(
+                        Authentication authentication) {
 
-        long totalMembers = memberRepository.count();
+                Member currentUser = getAuthenticatedMember(authentication);
 
-        long totalTasks = taskRepository.count();
+                Long organizationId = currentUser.getOrganization().getId();
 
-        long todoTasks = taskRepository.findAll()
-                .stream()
-                .filter(task -> "TODO".equals(task.getStatus()))
-                .count();
+                long totalMembers = memberRepository
+                                .findByOrganizationId(organizationId)
+                                .size();
 
-        long inProgressTasks = taskRepository.findAll()
-                .stream()
-                .filter(task -> "IN_PROGRESS".equals(task.getStatus()))
-                .count();
+                List<Task> tasks = taskRepository
+                                .findByOrganizationId(organizationId);
 
-        long completedTasks = taskRepository.findAll()
-                .stream()
-                .filter(task -> "DONE".equals(task.getStatus()))
-                .count();
+                long totalTasks = tasks.size();
 
-        long totalEvents = eventRepository.count();
+                long todoTasks = tasks.stream()
+                                .filter(task -> "TODO".equals(task.getStatus()))
+                                .count();
 
-        long totalReports = reportRepository.count();
+                long inProgressTasks = tasks.stream()
+                                .filter(task -> "IN_PROGRESS".equals(task.getStatus()))
+                                .count();
 
-        DashboardResponse dashboard = new DashboardResponse(
-                totalMembers,
-                totalTasks,
-                todoTasks,
-                inProgressTasks,
-                completedTasks,
-                totalEvents,
-                totalReports);
+                long completedTasks = tasks.stream()
+                                .filter(task -> "DONE".equals(task.getStatus()))
+                                .count();
 
-        return ResponseEntity.ok(dashboard);
-    }
+                long totalEvents = eventRepository
+                                .findByOrganizationId(organizationId)
+                                .size();
+
+                long totalReports = reportRepository
+                                .findByOrganizationId(organizationId)
+                                .size();
+
+                DashboardResponse dashboard = new DashboardResponse(
+                                totalMembers,
+                                totalTasks,
+                                todoTasks,
+                                inProgressTasks,
+                                completedTasks,
+                                totalEvents,
+                                totalReports);
+
+                return ResponseEntity.ok(dashboard);
+        }
+
+        private Member getAuthenticatedMember(
+                        Authentication authentication) {
+
+                String email = authentication.getName();
+
+                return memberRepository.findByEmail(email)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Usuario autenticado no encontrado"));
+        }
 }

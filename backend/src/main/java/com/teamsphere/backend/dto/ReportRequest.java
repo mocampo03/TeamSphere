@@ -1,7 +1,6 @@
 package com.teamsphere.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class ReportRequest {
@@ -11,9 +10,6 @@ public class ReportRequest {
     private String title;
 
     private String description;
-
-    @NotNull(message = "La organización es obligatoria")
-    private Long organizationId;
 
     public ReportRequest() {
     }
@@ -32,13 +28,5 @@ public class ReportRequest {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Long getOrganizationId() {
-        return organizationId;
-    }
-
-    public void setOrganizationId(Long organizationId) {
-        this.organizationId = organizationId;
     }
 }

@@ -3,14 +3,17 @@ package com.teamsphere.backend.controller;
 import com.teamsphere.backend.dto.EventRequest;
 import com.teamsphere.backend.dto.EventResponse;
 import com.teamsphere.backend.entity.Event;
-import com.teamsphere.backend.entity.Organization;
+import com.teamsphere.backend.entity.Member;
 import com.teamsphere.backend.exception.ResourceNotFoundException;
 import com.teamsphere.backend.repository.EventRepository;
-import com.teamsphere.backend.repository.OrganizationRepository;
+import com.teamsphere.backend.repository.MemberRepository;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,107 +22,188 @@ import java.util.List;
 @RequestMapping("/api/events")
 public class EventController {
 
-    private final EventRepository eventRepository;
-    private final OrganizationRepository organizationRepository;
+        private final EventRepository eventRepository;
+        private final MemberRepository memberRepository;
 
-    public EventController(
-            EventRepository eventRepository,
-            OrganizationRepository organizationRepository) {
+        public EventController(
+                        EventRepository eventRepository,
+                        MemberRepository memberRepository) {
 
-        this.eventRepository = eventRepository;
-        this.organizationRepository = organizationRepository;
-    }
+                this.eventRepository = eventRepository;
+                this.memberRepository = memberRepository;
+        }
 
-    @GetMapping
-    public ResponseEntity<List<EventResponse>> getAllEvents() {
+        @GetMapping
+        public ResponseEntity<List<EventResponse>> getAllEvents(
+                        Authentication authentication) {
 
-        List<EventResponse> events = eventRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+                Member currentUser = getAuthenticatedMember(authentication);
 
-        return ResponseEntity.ok(events);
-    }
+                Long organizationId = currentUser.getOrganization().getId();
 
-    @GetMapping("/{id}")
-    public ResponseEntity<EventResponse> getEventById(@PathVariable Long id) {
+                List<EventResponse> events = eventRepository
+                                .findByOrganizationId(organizationId)
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
 
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado"));
+                return ResponseEntity.ok(events);
+        }
 
-        return ResponseEntity.ok(toResponse(event));
-    }
+        @GetMapping("/organization/{organizationId}")
+        public ResponseEntity<List<EventResponse>> getEventsByOrganization(
+                        @PathVariable Long organizationId,
+                        Authentication authentication) {
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    public ResponseEntity<EventResponse> createEvent(
-            @Valid @RequestBody EventRequest request) {
+                Member currentUser = getAuthenticatedMember(authentication);
 
-        Event event = new Event();
+                validateSameOrganization(
+                                organizationId,
+                                currentUser.getOrganization().getId());
 
-        event.setTitle(request.getTitle());
-        event.setDescription(request.getDescription());
-        event.setStartDate(request.getStartDate());
-        event.setEndDate(request.getEndDate());
+                List<EventResponse> events = eventRepository
+                                .findByOrganizationId(organizationId)
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
 
-        Organization organization = organizationRepository
-                .findById(request.getOrganizationId())
-                .orElseThrow(() -> new ResourceNotFoundException("Organización no encontrada"));
+                return ResponseEntity.ok(events);
+        }
 
-        event.setOrganization(organization);
+        @GetMapping("/{id}")
+        public ResponseEntity<EventResponse> getEventById(
+                        @PathVariable Long id,
+                        Authentication authentication) {
 
-        Event savedEvent = eventRepository.save(event);
+                Member currentUser = getAuthenticatedMember(authentication);
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(toResponse(savedEvent));
-    }
+                Event event = getEventFromSameOrganization(
+                                id,
+                                currentUser.getOrganization().getId());
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
-    public ResponseEntity<EventResponse> updateEvent(
-            @PathVariable Long id,
-            @Valid @RequestBody EventRequest request) {
+                return ResponseEntity.ok(toResponse(event));
+        }
 
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado"));
+        @PreAuthorize("hasRole('ADMIN')")
+        @PostMapping
+        public ResponseEntity<EventResponse> createEvent(
+                        @Valid @RequestBody EventRequest request,
+                        Authentication authentication) {
 
-        event.setTitle(request.getTitle());
-        event.setDescription(request.getDescription());
-        event.setStartDate(request.getStartDate());
-        event.setEndDate(request.getEndDate());
+                Member currentUser = getAuthenticatedMember(authentication);
 
-        Organization organization = organizationRepository
-                .findById(request.getOrganizationId())
-                .orElseThrow(() -> new ResourceNotFoundException("Organización no encontrada"));
+                Event event = new Event();
 
-        event.setOrganization(organization);
+                event.setTitle(request.getTitle());
+                event.setDescription(request.getDescription());
+                event.setStartDate(request.getStartDate());
+                event.setEndDate(request.getEndDate());
 
-        Event updatedEvent = eventRepository.save(event);
+                /*
+                 * La organización siempre se obtiene del usuario autenticado.
+                 * No se utiliza request.getOrganizationId().
+                 */
+                event.setOrganization(currentUser.getOrganization());
 
-        return ResponseEntity.ok(toResponse(updatedEvent));
-    }
+                Event savedEvent = eventRepository.save(event);
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
+                return ResponseEntity
+                                .status(HttpStatus.CREATED)
+                                .body(toResponse(savedEvent));
+        }
 
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado"));
+        @PreAuthorize("hasRole('ADMIN')")
+        @PutMapping("/{id}")
+        public ResponseEntity<EventResponse> updateEvent(
+                        @PathVariable Long id,
+                        @Valid @RequestBody EventRequest request,
+                        Authentication authentication) {
 
-        eventRepository.delete(event);
+                Member currentUser = getAuthenticatedMember(authentication);
 
-        return ResponseEntity.noContent().build();
-    }
+                Event event = getEventFromSameOrganization(
+                                id,
+                                currentUser.getOrganization().getId());
 
-    private EventResponse toResponse(Event event) {
+                event.setTitle(request.getTitle());
+                event.setDescription(request.getDescription());
+                event.setStartDate(request.getStartDate());
+                event.setEndDate(request.getEndDate());
 
-        return new EventResponse(
-                event.getId(),
-                event.getTitle(),
-                event.getDescription(),
-                event.getStartDate(),
-                event.getEndDate(),
-                event.getOrganization().getId());
-    }
+                /*
+                 * El evento conserva la organización del usuario autenticado.
+                 */
+                event.setOrganization(currentUser.getOrganization());
+
+                Event updatedEvent = eventRepository.save(event);
+
+                return ResponseEntity.ok(toResponse(updatedEvent));
+        }
+
+        @PreAuthorize("hasRole('ADMIN')")
+        @DeleteMapping("/{id}")
+        public ResponseEntity<Void> deleteEvent(
+                        @PathVariable Long id,
+                        Authentication authentication) {
+
+                Member currentUser = getAuthenticatedMember(authentication);
+
+                Event event = getEventFromSameOrganization(
+                                id,
+                                currentUser.getOrganization().getId());
+
+                eventRepository.delete(event);
+
+                return ResponseEntity.noContent().build();
+        }
+
+        private Member getAuthenticatedMember(
+                        Authentication authentication) {
+
+                String email = authentication.getName();
+
+                return memberRepository.findByEmail(email)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Usuario autenticado no encontrado"));
+        }
+
+        private Event getEventFromSameOrganization(
+                        Long eventId,
+                        Long organizationId) {
+
+                Event event = eventRepository.findById(eventId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Evento no encontrado"));
+
+                if (!event.getOrganization()
+                                .getId()
+                                .equals(organizationId)) {
+
+                        throw new ResourceNotFoundException(
+                                        "Evento no encontrado");
+                }
+
+                return event;
+        }
+
+        private void validateSameOrganization(
+                        Long requestedOrganizationId,
+                        Long authenticatedOrganizationId) {
+
+                if (!requestedOrganizationId.equals(authenticatedOrganizationId)) {
+                        throw new ResourceNotFoundException(
+                                        "Recurso no encontrado");
+                }
+        }
+
+        private EventResponse toResponse(Event event) {
+
+                return new EventResponse(
+                                event.getId(),
+                                event.getTitle(),
+                                event.getDescription(),
+                                event.getStartDate(),
+                                event.getEndDate(),
+                                event.getOrganization().getId());
+        }
 }

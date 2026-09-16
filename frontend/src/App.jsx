@@ -12,6 +12,7 @@ import TasksPage from "./pages/TasksPage";
 import EventsPage from "./pages/EventsPage";
 import ReportsPage from "./pages/ReportsPage";
 import LoginPage from "./pages/LoginPage";
+import AIAssistantPage from "./pages/AIAssistantPage";
 
 function App() {
   return (
@@ -33,6 +34,8 @@ function App() {
               <Route path="events" element={<EventsPage />} />
 
               <Route path="reports" element={<ReportsPage />} />
+
+              <Route path="/ai-assistant" element={<AIAssistantPage />} />
             </Route>
           </Route>
         </Routes>

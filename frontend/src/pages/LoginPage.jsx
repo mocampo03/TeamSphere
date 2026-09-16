@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Lock, ArrowRight, Sparkles, Sun, Moon } from "lucide-react";
 
 import api from "../services/api";
+import { useTheme } from "../context/ThemeContext";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,6 +41,16 @@ function LoginPage() {
 
   return (
     <div className="login-page">
+      <button
+        type="button"
+        className="login-theme-toggle"
+        onClick={toggleTheme}
+        aria-label="Toggle theme"
+        title={theme === "light" ? "Enable dark mode" : "Enable light mode"}
+      >
+        {theme === "light" ? <Moon size={19} /> : <Sun size={19} />}
+      </button>
+      
       <div className="login-card">
         <div className="login-brand">
           <div className="login-logo">
